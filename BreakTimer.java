@@ -7,17 +7,21 @@ public class BreakTimer extends JPanel implements ActionListener {
 
 	private Timer timer;
 	private int currentSeconds, currentMinutes, startSeconds, startMinutes, buttonSize;
+	private boolean playMediaFile;
 	private String timeString, buttonFont, player, switches;
 	private File nextFile;
 	private JButton toggleButton;
 	private JButton stopButton;
 	private JLabel timeLabel;
+	JMenuItem setFile, setPlayer, setFlags;
+	JCheckBoxMenuItem setPlayMedia;
 
 	private static final int DEFAULT_MINUTES = 15;
 	private static final int DEFAULT_SECONDS = 0;
 
 	public BreakTimer() {
 		
+		playMediaFile = true;
 		buttonSize = 370;
 		startSeconds = DEFAULT_SECONDS;
 		startMinutes = DEFAULT_MINUTES;
@@ -66,17 +70,23 @@ public class BreakTimer extends JPanel implements ActionListener {
 				if(currentMinutes == 0 && currentSeconds == 0) {
 					
 					updateTimeLabel();
-					//using wav.exe for now...
-					try {
-						java.lang.Runtime.getRuntime().exec(player + " \"" + nextFile.getAbsolutePath() + "\" " + switches);
-						nextFile = getNextFile(nextFile);
-						try {
-							writeConfig();
-						} catch(IOException ioe) {
-							JOptionPane.showMessageDialog(null, "Can't write config.ini", "Error", JOptionPane.ERROR_MESSAGE);
-						}
-					} catch(IOException ioe) {}
 					
+					if (playMediaFile)
+					{
+						//using wav.exe for now...
+						try {
+							java.lang.Runtime.getRuntime().exec(player + " \"" + nextFile.getAbsolutePath() + "\" " + switches);
+							nextFile = getNextFile(nextFile);
+							try {
+								writeConfig();
+							} catch(IOException ioe) {
+								JOptionPane.showMessageDialog(null, "Can't write config.ini", "Error", JOptionPane.ERROR_MESSAGE);
+							}
+						} catch(IOException ioe) {}
+					} else {
+						Toolkit.getDefaultToolkit().beep();
+					}
+						
 					toggleButton.setForeground(new Color(0xff0000));
 					timer.stop();
 				} else if(currentMinutes > 0 && currentSeconds == 0) {
@@ -117,6 +127,7 @@ public class BreakTimer extends JPanel implements ActionListener {
 		nextFile = new File(inputFileReader.readLine());
 		player = inputFileReader.readLine();
 		switches = inputFileReader.readLine();
+		playMediaFile = Boolean.parseBoolean(inputFileReader.readLine());
 	}
 	
 	private void writeConfig() throws IOException {
@@ -133,6 +144,10 @@ public class BreakTimer extends JPanel implements ActionListener {
 		out.write("" + nextFile.getAbsolutePath() + "\n");
 		out.write(player + "\n");
 		out.write(switches + "\n");
+		if (playMediaFile)
+			out.write("true\n");
+		else
+			out.write("false\n");
 				
 		out.close();				
 	}
@@ -156,46 +171,40 @@ public class BreakTimer extends JPanel implements ActionListener {
 		
 		JMenuBar timerMenuBar;
 		JMenu commandsMenu, settingsMenu;
-		JMenuItem restart, start, stop, setMinutes, setSeconds, setFile, setPlayer, setFlags, saveSettings;
+		JMenuItem restart, start, stop, setMinutes, setSeconds;
 		
 		timerMenuBar = new JMenuBar();
 		
 		commandsMenu = new JMenu("Commands");
 		commandsMenu.setMnemonic(KeyEvent.VK_C);
-		commandsMenu.getAccessibleContext().setAccessibleDescription(
-                "Timer commands.");                
+		commandsMenu.getAccessibleContext().setAccessibleDescription("Timer commands.");                
 		timerMenuBar.add(commandsMenu);
-		
+
 		settingsMenu = new JMenu("Settings");
 		settingsMenu.setMnemonic(KeyEvent.VK_S);
-		settingsMenu.getAccessibleContext().setAccessibleDescription(
-                "Timer settings.");                
+		settingsMenu.getAccessibleContext().setAccessibleDescription("Timer settings.");                
 		timerMenuBar.add(settingsMenu);
-		
+
 		start = new JMenuItem("Start", KeyEvent.VK_S);
-		start.getAccessibleContext().setAccessibleDescription(
-                "Starts the timer.");
+		start.getAccessibleContext().setAccessibleDescription("Starts the timer.");
 		start.setActionCommand("start");
 		start.addActionListener(this);
-      commandsMenu.add(start);
-      
-      stop = new JMenuItem("Stop", KeyEvent.VK_T);
-		stop.getAccessibleContext().setAccessibleDescription(
-                "Stops the timer.");
+		commandsMenu.add(start);
+
+		stop = new JMenuItem("Stop", KeyEvent.VK_T);
+		stop.getAccessibleContext().setAccessibleDescription("Stops the timer.");
 		stop.setActionCommand("stop");
 		stop.addActionListener(this);
-      commandsMenu.add(stop);
-		
+		commandsMenu.add(stop);
+
 		restart = new JMenuItem("Restart", KeyEvent.VK_R);
-		restart.getAccessibleContext().setAccessibleDescription(
-                "Restarts the timer.");
+		restart.getAccessibleContext().setAccessibleDescription("Restarts the timer.");
 		restart.setActionCommand("restart");
 		restart.addActionListener(this);
-      commandsMenu.add(restart);
-      
-      setMinutes = new JMenuItem("Minutes...", KeyEvent.VK_M);
-		setMinutes.getAccessibleContext().setAccessibleDescription(
-                "Dialog to set the minutes for the timer.");
+		commandsMenu.add(restart);
+
+		setMinutes = new JMenuItem("Minutes...", KeyEvent.VK_M);
+		setMinutes.getAccessibleContext().setAccessibleDescription("Dialog to set the minutes for the timer.");
 		setMinutes.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				
@@ -219,11 +228,11 @@ public class BreakTimer extends JPanel implements ActionListener {
 				}
 			}			
 		});
-      settingsMenu.add(setMinutes);
-      
-      setSeconds = new JMenuItem("Seconds...", KeyEvent.VK_C);
-		setSeconds.getAccessibleContext().setAccessibleDescription(
-                "Dialog to set the seconds for the timer.");
+		
+		settingsMenu.add(setMinutes);
+		
+		setSeconds = new JMenuItem("Seconds...", KeyEvent.VK_C);
+		setSeconds.getAccessibleContext().setAccessibleDescription("Dialog to set the seconds for the timer.");
 		setSeconds.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				
@@ -247,12 +256,13 @@ public class BreakTimer extends JPanel implements ActionListener {
 				}
 			}			
 		});
-      settingsMenu.add(setSeconds);
-      
-      setSeconds = new JMenuItem("Size...", KeyEvent.VK_Z);
-		setSeconds.getAccessibleContext().setAccessibleDescription(
-                "Dialog to set the seconds for the timer.");
+		
+		settingsMenu.add(setSeconds);
+
+		setSeconds = new JMenuItem("Size...", KeyEvent.VK_Z);
+		setSeconds.getAccessibleContext().setAccessibleDescription("Dialog to set the seconds for the timer.");
 		setSeconds.addActionListener(new ActionListener() {
+
 			public void actionPerformed(ActionEvent evt) {
 				
 				int input = currentSeconds;
@@ -279,11 +289,10 @@ public class BreakTimer extends JPanel implements ActionListener {
 				}
 			}			
 		});
-      settingsMenu.add(setSeconds);
-      
-      setSeconds = new JMenuItem("Font...", KeyEvent.VK_N);
-		setSeconds.getAccessibleContext().setAccessibleDescription(
-                "Dialog to set the seconds for the timer.");
+		settingsMenu.add(setSeconds);
+
+		setSeconds = new JMenuItem("Font...", KeyEvent.VK_N);
+		setSeconds.getAccessibleContext().setAccessibleDescription("Dialog to set the seconds for the timer.");
 		setSeconds.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				
@@ -302,29 +311,45 @@ public class BreakTimer extends JPanel implements ActionListener {
 				}
 			}			
 		});
-      settingsMenu.add(setSeconds);
-      
-      setFile = new JMenuItem("Current Media File...", KeyEvent.VK_W);
-		setFile.getAccessibleContext().setAccessibleDescription(
-                "Dialog to set the file played on finish.");
+		settingsMenu.add(setSeconds);
+		
+		setPlayMedia = new JCheckBoxMenuItem("Play Media File");
+		setPlayMedia.setSelected(playMediaFile);
+		setPlayMedia.getAccessibleContext().setAccessibleDescription("Toggles playing of media file when timer reaches 0.");
+		setPlayMedia.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				
+				playMediaFile = !playMediaFile;
+				updateMediaMenu();
+				
+				try {
+					writeConfig();
+				} catch(IOException ioe) {
+					JOptionPane.showMessageDialog(null, "Can't write config.ini", "Error", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		});
+		
+		settingsMenu.add(setPlayMedia);
+
+		setFile = new JMenuItem("Current Media File...", KeyEvent.VK_W);
+		setFile.getAccessibleContext().setAccessibleDescription("Dialog to set the file played on finish.");
 		setFile.setActionCommand("browse");
 		setFile.addActionListener(this);
-      settingsMenu.add(setFile);
-      
-      setPlayer = new JMenuItem("Media Player...", KeyEvent.VK_P);
-		setPlayer.getAccessibleContext().setAccessibleDescription(
-                "Dialog to set the media player.");
+		settingsMenu.add(setFile);
+
+		setPlayer = new JMenuItem("Media Player...", KeyEvent.VK_P);
+		setPlayer.getAccessibleContext().setAccessibleDescription("Dialog to set the media player.");
 		setPlayer.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				
 				setNewPlayer();
 			}			
 		});
-      settingsMenu.add(setPlayer);
-      
-      setFlags = new JMenuItem("Player Flags...", KeyEvent.VK_F);
-		setFlags.getAccessibleContext().setAccessibleDescription(
-                "Dialog to set the media player flags.");
+
+		settingsMenu.add(setPlayer);
+		setFlags = new JMenuItem("Player Flags...", KeyEvent.VK_F);
+		setFlags.getAccessibleContext().setAccessibleDescription("Dialog to set the media player flags.");
 		setFlags.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				
@@ -341,23 +366,10 @@ public class BreakTimer extends JPanel implements ActionListener {
 				}
 			}			
 		});
-      settingsMenu.add(setFlags);
-      
-      /*
-      saveSettings = new JMenuItem("Save Settings", KeyEvent.VK_V);
-      saveSettings.getAccessibleContext().setAccessibleDescription(
-                "Saves your settings to config.ini");
-		saveSettings.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent evt) {
-				try {
-					writeConfig();
-				} catch(IOException ioe) {
-					JOptionPane.showMessageDialog(null, "Can't write config.ini", "Error", JOptionPane.ERROR_MESSAGE);
-				}
-			}			
-		});
-      settingsMenu.add(saveSettings);		
-		*/
+		
+		settingsMenu.add(setFlags);
+		
+		updateMediaMenu();
 		
 		return timerMenuBar;
 	}
@@ -402,6 +414,14 @@ public class BreakTimer extends JPanel implements ActionListener {
 				JOptionPane.showMessageDialog(null, "Can't write config.ini", "Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
+	}
+	
+	private void updateMediaMenu() {
+		
+		setFile.setEnabled(playMediaFile);
+		setPlayer.setEnabled(playMediaFile);
+		setFlags.setEnabled(playMediaFile);
+		setPlayMedia.setSelected(playMediaFile);		
 	}
 	
 	private void setNewPlayer() {
