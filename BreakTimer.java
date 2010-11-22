@@ -2,7 +2,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-
+/**
+* Copyright 2010 Stat-Ease, Inc.
+*/
 public class BreakTimer extends JPanel implements ActionListener {
 
 	private Timer timer;
